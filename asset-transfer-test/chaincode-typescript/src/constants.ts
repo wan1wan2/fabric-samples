@@ -1,0 +1,1 @@
+export const BOOKING_COMMISSION_NAMESPACE = "org.test.bookingcommission";

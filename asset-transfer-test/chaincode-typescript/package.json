@@ -1,0 +1,21 @@
+{
+  "name": "chaincode-typescript",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "monitor": "nodemon",
+    "test": "npm run build && ava build/tests/app-test.js --timeout 30s",
+    "start": "node build/index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "ava": "^3.14.0"
+  },
+  "dependencies": {
+    "fabric-contract-api": "^2.2.1",
+    "fabric-shim": "^2.2.1"
+  }
+}

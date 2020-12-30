@@ -1,0 +1,26 @@
+{
+    "compilerOptions": {
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "target": "es2017",
+        "module": "commonjs",
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": false,
+        "strictPropertyInitialization": false,
+        "pretty": true,
+        "declaration": true,
+        "sourceMap": true,
+        "lib": ["es2017", "esnext.asynciterable", "dom"],
+        "rootDir": "./src",
+        "outDir": "./build"
+    },
+    "include": ["./src/**/*.ts", "./typings/*"],
+    "exclude": [
+        "node_modules",
+        "**/*.spec.ts"
+    ]
+  }
+  
