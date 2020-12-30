@@ -18,12 +18,20 @@ export class BookingCommission extends State {
     @Property()
     public status: string;
 
-    constructor(bookingId: string, agent: string, status: string, commissionAmount?: number) {
-        super(BookingCommission.getClass(), [agent, bookingId])
-        this.bookingId = bookingId;
-        this.agent = agent;
-        this.status = status;
-        this.commissionAmount = commissionAmount || 0;
+    @Property()
+    public createdTime: Date;
+
+    @Property()
+    public updatedTime: Date;
+
+    constructor(obj: any) {
+        super(BookingCommission.getClass(), [obj.agent, obj.bookingId])
+        this.bookingId = obj.bookingId;
+        this.agent = obj.agent;
+        this.status = obj.status || 'OF';
+        this.commissionAmount = obj.commissionAmount || 0;
+        this.createdTime = obj.createdTime || new Date();
+        this.updatedTime = obj.updatedTime || new Date();
     }
 
     static getClass() {
@@ -46,6 +54,27 @@ export class BookingCommissionList extends StateList {
     }
 
     async getBookingCommission(key: string) {
-        return this.getState(key);
+        let data = await this.getState(key);
+        if (!data) return null;
+        return new BookingCommission(data);
+    }
+
+    async getAll() {
+        let allResults = [];
+        const iterator = await this.ctx.stub.getStateByRange('', '');
+        let result = await iterator.next();
+        while (!result.done) {
+            const strValue = Buffer.from(result.value.value.toString()).toString('utf8');
+            let record;
+            try {
+                record = JSON.parse(strValue);
+            } catch (err) {
+                console.log(err);
+                record = strValue;
+            }
+            allResults.push({Key: result.value.key, Record: record});
+            result = await iterator.next();
+        }
+        return allResults;
     }
 }

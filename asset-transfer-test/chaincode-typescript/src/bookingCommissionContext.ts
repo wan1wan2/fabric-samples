@@ -1,5 +1,3 @@
-import { BookingCommission } from "./bookingCommission";
-
 import { Context } from 'fabric-contract-api';
 import { BookingCommissionList } from './bookingCommission';
 

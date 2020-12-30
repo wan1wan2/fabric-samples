@@ -4,11 +4,15 @@ export class State {
 
     constructor(className: string, keyParts: string[]) {
         this.className = className;
-        this.key = keyParts.join(':');
+        this.key = State.makeyKey(keyParts);
     }
 
     getSplitKey() {
         return State.splitKey(this.key);
+    }
+
+    static makeyKey(keyParts: string[]) {
+        return keyParts.join(':')
     }
     
     static splitKey(key: string) {
@@ -37,8 +41,7 @@ export class State {
      */
     static deserialize(data: any) {
         let json = JSON.parse(data.toString());
-        let object = new (json);
-        return object;
+        return json;
     }
 
     
