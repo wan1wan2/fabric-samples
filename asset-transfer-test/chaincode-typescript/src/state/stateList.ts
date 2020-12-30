@@ -10,7 +10,7 @@ export class StateList {
         this.name = listName;
     }
 
-    async add(state: State) {
+    async addState(state: State) {
         let key = this.ctx.stub.createCompositeKey(this.name, state.getSplitKey());
         let data = State.serialize(state);
         await this.ctx.stub.putState(key, data);

@@ -37,5 +37,15 @@ export class BookingCommissionList extends StateList {
         // this.use(BookingCommission)
     }
 
-    
+    async addBookingCommission(bookingCommission: BookingCommission) {
+        return this.addState(bookingCommission);
+    }
+
+    async updateBookingCommission(bookingCommission: BookingCommission) {
+        return this.updateState(bookingCommission);
+    }
+
+    async getBookingCommission(key: string) {
+        return this.getState(key);
+    }
 }
