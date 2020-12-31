@@ -37,6 +37,17 @@ export class BookingCommission extends State {
     static getClass() {
         return `${BOOKING_COMMISSION_NAMESPACE}.booking`;
     }
+
+    public serialize() {
+        return JSON.stringify({
+            bookingId: this.bookingId,
+            agent: this.agent,
+            status: this.status,
+            commissionAmount: this.commissionAmount,
+            createdTime: this.createdTime,
+            updatedTime: this.updatedTime
+        });
+    }
 }
 
 export class BookingCommissionList extends StateList {

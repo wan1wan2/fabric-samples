@@ -41,7 +41,9 @@ describe('test chaincode', ()=> {
             ctx.stub = mockStubAPI;
             should.exist(ctx.stub);
 
-            let bookingCommission = await contract.CreateBookingCommission(ctx, testBookingId, testAmount, testAgent);
+            let result = await contract.CreateBookingCommission(ctx, testBookingId, testAmount, testAgent);
+            should.exist(result);
+            let bookingCommission = new BookingCommission(JSON.parse(result));
             should.exist(bookingCommission);
             expect(bookingCommission.bookingId).eq(testBookingId);
             expect(bookingCommission.agent).eq(testAgent);
@@ -65,6 +67,55 @@ describe('test chaincode', ()=> {
             }
         });
 
+        it('check booking exists should be ok', async ()=> {
+            let contract = new BookingCommissionTransferContract();
+            should.exist(contract);
+
+            let ctx = contract.createContext();
+            ctx.stub = mockStubAPI;
+            should.exist(ctx.stub);
+
+            let bookingCommission = new BookingCommission({
+                bookingId: testBookingId, 
+                agent: testAgent, 
+                status: 'OF', 
+                commissionAmount: testAmount
+            });
+            let buffer = State.serialize(bookingCommission);
+            mockStubAPI.getState = async ()=> {
+                return buffer;
+            };
+
+            let data = await contract.IsBookingCommissionExists(ctx, testBookingId, testAgent);
+            expect(data).to.be.true;
+        });
+
+        it('check booking exists should be failure', async ()=> {
+            let contract = new BookingCommissionTransferContract();
+            should.exist(contract);
+
+            let ctx = contract.createContext();
+            ctx.stub = mockStubAPI;
+            should.exist(ctx.stub);
+
+            let bookingCommission = new BookingCommission({
+                bookingId: testBookingId, 
+                agent: testAgent, 
+                status: 'OF', 
+                commissionAmount: testAmount
+            });
+            let buffer = State.serialize(bookingCommission);
+            mockStubAPI.getState = async (key: string)=> {
+                if (key == BookingCommission.makeyKey([testAgent, testBookingId])) {
+                    return buffer;
+                }
+                return Buffer.alloc(1);
+            };
+
+            let data = await contract.IsBookingCommissionExists(ctx, testBookingId, 'testAgent2');
+            expect(data).to.be.false;
+        });
+
         it('retrieve booking should be ok', async ()=> {
             let contract = new BookingCommissionTransferContract();
             should.exist(contract);
@@ -84,12 +135,13 @@ describe('test chaincode', ()=> {
                 return buffer;
             };
 
-            let retrieveBooking = await contract.RetrieveBookingCommission(ctx, testBookingId, testAgent);
-            should.exist(retrieveBooking);
+            let data = await contract.RetrieveBookingCommission(ctx, testBookingId, testAgent);
+            should.exist(data);
+            let retrieveBooking = new BookingCommission(JSON.parse(data));
             expect(bookingCommission.bookingId).eq(retrieveBooking.bookingId);
             expect(bookingCommission.agent).eq(retrieveBooking.agent);
             expect(bookingCommission.commissionAmount).eq(retrieveBooking.commissionAmount);
-        })
+        });
 
         it('update booking should be ok', async ()=> {
             let contract = new BookingCommissionTransferContract();
@@ -111,10 +163,11 @@ describe('test chaincode', ()=> {
             };
 
             const newStatus = 'BK';
-            let updatedBooking = await contract.UpdateBookingCommission(ctx
+            let data = await contract.UpdateBookingCommission(ctx
                 , bookingCommission.bookingId, bookingCommission.commissionAmount, bookingCommission.agent
                 , newStatus);
-            should.exist(updatedBooking);
+            should.exist(data);
+            let updatedBooking = new BookingCommission(JSON.parse(data));
             expect(updatedBooking.bookingId).eq(bookingCommission.bookingId);
             expect(updatedBooking.status).eq(newStatus);
 

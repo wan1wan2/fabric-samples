@@ -1,4 +1,4 @@
-import { Info, Contract } from 'fabric-contract-api';
+import { Info, Contract, Transaction, Returns } from 'fabric-contract-api';
 import { BookingCommission } from './bookingCommission';
 import { BookingCommissionContext } from './bookingCommissionContext';
 import { BOOKING_COMMISSION_NAMESPACE } from './constants';
@@ -16,39 +16,59 @@ export class BookingCommissionTransferContract extends Contract {
     }
 
     // Create Booking Commission
+    @Transaction()
+    @Returns('string')
     public async CreateBookingCommission(ctx: BookingCommissionContext, bookingId: string
-        , commissionAmount: number, agent: string): Promise<BookingCommission> {
+        , commissionAmount: number, agent: string): Promise<string> {
 
-            if (!bookingId || bookingId.length == 0) {
-                throw new Error('booking Id Empty');
-            } else if (!agent || agent.length == 0) {
-                throw new Error('agent error');
-            }
-            
-            let booking = new BookingCommission({bookingId, agent, status: 'OF', commissionAmount});
-            await ctx.bookingCommisionList.addBookingCommission(booking);
-            return booking;
+        if (!bookingId || bookingId.length == 0) {
+            throw new Error('booking Id Empty');
+        } else if (!agent || agent.length == 0) {
+            throw new Error('agent error');
         }
+        
+        let booking = new BookingCommission({bookingId, agent, status: 'OF', commissionAmount});
+        await ctx.bookingCommisionList.addBookingCommission(booking);
+        return booking.serialize();
+    }
 
+    @Transaction(false)
+    @Returns('boolean')
+    public async IsBookingCommissionExists(ctx: BookingCommissionContext, bookingId: string, agent: string)
+    : Promise<boolean> {
+        try {
+            let data = await this.RetrieveBookingCommission(ctx, bookingId, agent);
+            return data != null;
+        } catch (e) {
+            console.error(e);
+            return false;
+        }
+    }
+
+    @Transaction(false)
+    @Returns('string')
     public async RetrieveBookingCommission(ctx: BookingCommissionContext, bookingId: string, agent: string)
-    : Promise<BookingCommission> {
+    : Promise<string> {
         const key = State.makeyKey([agent, bookingId]);
         let bookingCommission = await ctx.bookingCommisionList.getBookingCommission(key);
         if (bookingCommission == null) throw new Error(`booking: ${bookingId}, agent: ${agent} does not exists`);
-        return bookingCommission;
+        return bookingCommission.serialize();
     }
 
+    @Transaction()
+    @Returns('string')
     public async UpdateBookingCommission(ctx: BookingCommissionContext, bookingId: string
-        , commissionAmount: number, agent: string, status: string): Promise<BookingCommission> {
-            let bookingCommission = await this.RetrieveBookingCommission(ctx, bookingId, agent);
-            if (!bookingCommission) {
+        , commissionAmount: number, agent: string, status: string): Promise<string> {
+            let data = await this.RetrieveBookingCommission(ctx, bookingId, agent);
+            if (!data) {
                 throw new Error(`booking: ${bookingId}, agent: ${agent} does not exist`);
             }
+            let bookingCommission = new BookingCommission(JSON.parse(data));
             bookingCommission.commissionAmount = commissionAmount;
             bookingCommission.status = status;
             bookingCommission.updatedTime = new Date();
             await ctx.bookingCommisionList.updateBookingCommission(bookingCommission);
-            return bookingCommission;
+            return bookingCommission.serialize();
         }
     
     // TODO Delete Booking Commission
@@ -61,7 +81,10 @@ export class BookingCommissionTransferContract extends Contract {
 
 
     // TODO Retrieve Booking Commission All
+    @Transaction(false)
+    @Returns('string')
     public async RetrieveAll(ctx: BookingCommissionContext) {
-        return await ctx.bookingCommisionList.getAll();
+        let results = await ctx.bookingCommisionList.getAll();
+        return JSON.stringify(results);
     }
 }
