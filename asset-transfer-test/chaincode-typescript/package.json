@@ -2,12 +2,12 @@
   "name": "chaincode-typescript",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "./build/index.js",
   "scripts": {
     "build": "tsc",
     "monitor": "nodemon",
     "test": "npm run build && mocha build/tests/*.js --recursive",
-    "start": "node build/index.js"
+    "start": "fabric-chaincode-node start"
   },
   "author": "",
   "license": "ISC",
