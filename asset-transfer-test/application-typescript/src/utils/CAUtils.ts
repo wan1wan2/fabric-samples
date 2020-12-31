@@ -63,7 +63,6 @@ const registerAndEnrollUser = async (caClient: FabricCAServices, wallet: Wallet,
 
         const provider = wallet.getProviderRegistry().getProvider(adminIdentity.type);
         const adminUser = await provider.getUserContext(adminIdentity, adminUserId);
-
         const secret = await caClient.register({
             affiliation,
             enrollmentID: userId,

@@ -27,7 +27,7 @@ describe('utils-test', ()=>{
         const ccp = AppUtils.buildOrg1();
         const caClient = CAUtils.buildCAClient(ccp, 'ca.org1.example.com');
         const mspOrg1 = 'Org1MSP';
-        const wallet = await AppUtils.buildWallet();
+        const wallet = await AppUtils.buildWallet(walletPath);
         let result = await CAUtils.enrollAdmin(caClient, wallet, mspOrg1);
         expect(result).to.be.true;
 
@@ -37,7 +37,7 @@ describe('utils-test', ()=>{
         const ccp = AppUtils.buildOrg1();
         const caClient = CAUtils.buildCAClient(ccp, 'ca.org1.example.com');
         const mspOrg1 = 'Org1MSP';
-        const wallet = await AppUtils.buildWallet();
+        const wallet = await AppUtils.buildWallet(walletPath);
         let adminEnrollResult = await CAUtils.enrollAdmin(caClient, wallet, mspOrg1);
         expect(adminEnrollResult).to.be.true;
 
