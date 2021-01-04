@@ -1,6 +1,6 @@
 import {Context, Contract, Info, Returns, Transaction} from 'fabric-contract-api';
-import {Asset, AssetDetail} from './asset';
-import { State } from './libs/State';
+import {Asset, AssetDetail} from './models/asset';
+import { BaseModel } from './models/BaseModel';
 
 const assetCollection = "assetCollection"
 // const transferAgreementObjectType = "transferAgreement"
@@ -34,11 +34,7 @@ export class AssetTransferContract extends Contract {
         }
 
         this.verifyClientOrgMatchesPeerOrg(ctx);
-        const assetInput = new Asset();
-        assetInput.ID = transientAsset.ID;
-        assetInput.Color = transientAsset.Color;
-        assetInput.Size = transientAsset.Size;
-        assetInput.docType = transientAsset.docType;
+        const assetInput = new Asset(transientAsset);
         assetInput.Owner = clientId;
 
         try {
@@ -48,7 +44,10 @@ export class AssetTransferContract extends Contract {
         }
 
         try {
-            const assetDetail: AssetDetail = new AssetDetail(assetInput.ID, transientAsset.AppraisedValue);
+            const assetDetail: AssetDetail = new AssetDetail({
+                ID: assetInput.ID,
+                AppraisedValue: transientAsset.AppraisedValue
+            });
             const collectName = this.getCollectionName(ctx);
             await ctx.stub.putPrivateData(collectName, assetDetail.ID, assetDetail.serialize());
         } catch (e) {
@@ -66,13 +65,14 @@ export class AssetTransferContract extends Contract {
             return JSON.stringify({});
         }
 
-        let asset = State.deserialize<Asset>(assetBuffer);
+        let asset = BaseModel.deserialize<Asset>(assetBuffer);
         if (!asset) {
             console.error(`fail to deserialize asset: ${assetId}`);
             return JSON.stringify({});
         }
-        console.log(`read asset success, assetId: ${assetId}, data: ${JSON.stringify(asset)}`);
-        return JSON.stringify(asset);
+        let result = (new Asset(asset)).toJSON();
+        console.log(`read asset success, assetId: ${assetId}, data: ${result}`);
+        return result;
     }
 
     @Transaction(false)
@@ -84,13 +84,14 @@ export class AssetTransferContract extends Contract {
             return JSON.stringify({});
         }
 
-        let assetDetail = State.deserialize<AssetDetail>(assetDetailBuffer);
+        let assetDetail = BaseModel.deserialize<AssetDetail>(assetDetailBuffer);
         if (!assetDetail) {
             console.error(`fail to deserialize asset detail: ${assetId}`);
             return JSON.stringify({});
         }
-        console.log(`read asset detail success, assetId: ${assetId}, data: ${JSON.stringify(assetDetail)}`);
-        return JSON.stringify(assetDetail);
+        let result = (new AssetDetail(assetDetail)).toJSON();
+        console.log(`read asset detail success, assetId: ${assetId}, data: ${result}`);
+        return result;
     }
 
 

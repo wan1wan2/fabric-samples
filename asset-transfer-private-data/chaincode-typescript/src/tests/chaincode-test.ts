@@ -5,7 +5,7 @@ import chaiPrmoise from 'chai-as-promised';
 const { Stub } = require('fabric-shim');
 import { ChaincodeStub, ClientIdentity } from 'fabric-shim';
 import { AssetTransferContract } from '../assetTransfer';
-import { Asset, AssetDetail } from '../asset';
+import { Asset, AssetDetail } from '../models/asset';
 
 const expect = chai.expect;
 const should = chai.should();
@@ -59,7 +59,7 @@ describe('test chaincode', ()=> {
         mockStubAPI.getTransient = () => {
             let testAsset = getTestAsset();
             let result = new Map<string, Uint8Array>();
-            result.set('asset_properties', Buffer.from(JSON.stringify(testAsset)));
+            result.set('asset_properties', Buffer.from(testAsset.toJSON()));
             return result;
         }
 
@@ -116,17 +116,21 @@ describe('test chaincode', ()=> {
     });
 
     function getTestAsset(): Asset {
-        let testAsset = new Asset();
-        testAsset.AppraisedValue = 200;
-        testAsset.Color = 'blue';
-        testAsset.ID = 'asset1';
-        testAsset.Size = 16;
-        testAsset.docType = 'asset';
+        let testAsset = new Asset({
+            ID: 'asset1',
+            AppraisedValue: 200,
+            Color: 'blue',
+            Size: 16,
+            docType: 'asset'
+        });
         return testAsset
     }
 
     function getTestAssetDetails(): AssetDetail {
-        let testAssetDetail = new AssetDetail('asset1', 200);
+        let testAssetDetail = new AssetDetail({
+            ID: 'asset1',
+            AppraisedValue: 200
+        });
         return testAssetDetail;
     }
 

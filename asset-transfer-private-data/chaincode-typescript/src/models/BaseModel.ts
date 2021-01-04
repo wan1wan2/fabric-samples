@@ -1,11 +1,15 @@
 import { Property } from "fabric-contract-api";
 
-export class State {
+export abstract class BaseModel {
     @Property()
     public ID: string;
 
+    constructor(ID: string) {
+        this.ID = ID;
+    }
+
     public serialize() : Uint8Array {
-        return Buffer.from(JSON.stringify(this));
+        return Buffer.from(this.toJSON());
     }
   
     public static deserialize<T>(buffer: Uint8Array) : T | null {
@@ -16,4 +20,6 @@ export class State {
         const data: T = JSON.parse(text);
         return data;
     }
+
+    public abstract toJSON(): string;
 }
