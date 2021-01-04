@@ -8,6 +8,11 @@ const assetCollection = "assetCollection"
 @Info({title: 'AssetTransfer', description: 'Smart contract for trading assets'})
 export class AssetTransferContract extends Contract {
 
+    @Transaction(false)
+    public TestConnection(): string {
+        return 'connection success';
+    }
+
     @Transaction()
     public async CreateAsset(ctx: Context): Promise<void> {
         const transientMap: Map<string, Uint8Array> = ctx.stub.getTransient();
@@ -22,9 +27,9 @@ export class AssetTransferContract extends Contract {
 
         // Check if asset already exists
         let assetBytes = await ctx.stub.getPrivateData(assetCollection, transientAsset.ID);
-        if (assetBytes) {
+        if (assetBytes && assetBytes.length > 0) {
             console.log(`Asset already exists: ${transientAsset.ID}`);
-            throw new Error(`this asset already exists: ${transientAsset.ID}`);
+            throw new Error(`this asset already exists: ${transientAsset.ID}, ${assetBytes.toString()}`);
         }
 
         // Get ID of submitting client identity
@@ -60,7 +65,7 @@ export class AssetTransferContract extends Contract {
     @Returns("string")
     public async ReadAsset(ctx: Context, assetId: string): Promise<string> {
         let assetBuffer = await ctx.stub.getPrivateData(assetCollection, assetId);
-        if (!assetBuffer) {
+        if (!assetBuffer || assetBuffer.length === 0) {
             console.error(`fail to load asset: ${assetId}`);
             return JSON.stringify({});
         }
@@ -79,7 +84,7 @@ export class AssetTransferContract extends Contract {
     @Returns("string")
     public async ReadAssetPrivateDetails(ctx: Context, collect: string, assetId: string): Promise<string> {
         let assetDetailBuffer = await ctx.stub.getPrivateData(collect, assetId);
-        if (!assetDetailBuffer) {
+        if (!assetDetailBuffer || assetDetailBuffer.length === 0) {
             console.error(`fail to load asset detail: ${assetId}`);
             return JSON.stringify({});
         }
@@ -97,10 +102,11 @@ export class AssetTransferContract extends Contract {
 
     private submittingClientIdentity(ctx: Context): string | null {
         let base64ID = ctx.clientIdentity.getID();
-        if (!base64ID || base64ID.length === 0) {
-            return null;
-        }
-        return Buffer.from(base64ID, 'base64').toString();
+        return base64ID
+        // if (!base64ID || base64ID.length === 0) {
+        //     return null;
+        // }
+        // return Buffer.from(base64ID, 'base64').toString();
     }
 
     private verifyClientOrgMatchesPeerOrg(ctx: Context): void {

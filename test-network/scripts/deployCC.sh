@@ -111,6 +111,7 @@ fi
 
 packageChaincode() {
   set -x
+  rm ${CC_NAME}.tar.gz
   peer lifecycle chaincode package ${CC_NAME}.tar.gz --path ${CC_SRC_PATH} --lang ${CC_RUNTIME_LANGUAGE} --label ${CC_NAME}_${CC_VERSION} >&log.txt
   res=$?
   { set +x; } 2>/dev/null

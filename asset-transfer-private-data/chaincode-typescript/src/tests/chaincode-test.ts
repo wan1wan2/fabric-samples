@@ -33,7 +33,7 @@ describe('test chaincode', ()=> {
         }
         mockClientIdentity.getID = () => {
             let clientId = 'admin';
-            return Buffer.from(clientId, 'ascii').toString('base64');
+            return clientId;
         }
     });
 
@@ -67,6 +67,35 @@ describe('test chaincode', ()=> {
             await contract.CreateAsset(ctx);
         } catch (e) {
             expect(e).to.be.null;
+        }
+
+    });
+
+    it('create asset should be failure, already exists', async ()=> {
+        let contract = new AssetTransferContract();
+        let ctx = contract.createContext();
+        ctx.stub = mockStubAPI;
+        ctx.clientIdentity = mockClientIdentity;
+        mockStubAPI.getTransient = () => {
+            let testAsset = getTestAsset();
+            let result = new Map<string, Uint8Array>();
+            result.set('asset_properties', Buffer.from(testAsset.toJSON()));
+            return result;
+        }
+
+        mockStubAPI.getPrivateData = async (collection: string) => {
+            if (collection === assetCollection) {
+                let testAsset = getTestAsset();
+                return testAsset.serialize();
+            } 
+            throw new Error('unsupported collection');
+        }
+
+        try {
+            await contract.CreateAsset(ctx);
+        } catch (e) {
+            console.log(e);
+            expect(e).to.not.null;
         }
 
     });
