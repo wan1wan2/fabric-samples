@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AssetTransferContract = void 0;
 const fabric_contract_api_1 = require("fabric-contract-api");
 const asset_1 = require("./asset");
+const State_1 = require("./libs/State");
 const assetCollection = "assetCollection";
 // const transferAgreementObjectType = "transferAgreement"
 let AssetTransferContract = class AssetTransferContract extends fabric_contract_api_1.Contract {
@@ -58,6 +59,34 @@ let AssetTransferContract = class AssetTransferContract extends fabric_contract_
             throw new Error(`CreateAssetDetail Error ${e}`);
         }
     }
+    async ReadAsset(ctx, assetId) {
+        let assetBuffer = await ctx.stub.getPrivateData(assetCollection, assetId);
+        if (!assetBuffer) {
+            console.error(`fail to load asset: ${assetId}`);
+            return JSON.stringify({});
+        }
+        let asset = State_1.State.deserialize(assetBuffer);
+        if (!asset) {
+            console.error(`fail to deserialize asset: ${assetId}`);
+            return JSON.stringify({});
+        }
+        console.log(`read asset success, assetId: ${assetId}, data: ${JSON.stringify(asset)}`);
+        return JSON.stringify(asset);
+    }
+    async ReadAssetPrivateDetails(ctx, collect, assetId) {
+        let assetDetailBuffer = await ctx.stub.getPrivateData(collect, assetId);
+        if (!assetDetailBuffer) {
+            console.error(`fail to load asset detail: ${assetId}`);
+            return JSON.stringify({});
+        }
+        let assetDetail = State_1.State.deserialize(assetDetailBuffer);
+        if (!assetDetail) {
+            console.error(`fail to deserialize asset detail: ${assetId}`);
+            return JSON.stringify({});
+        }
+        console.log(`read asset detail success, assetId: ${assetId}, data: ${JSON.stringify(assetDetail)}`);
+        return JSON.stringify(assetDetail);
+    }
     submittingClientIdentity(ctx) {
         let base64ID = ctx.clientIdentity.getID();
         if (!base64ID || base64ID.length === 0) {
@@ -86,6 +115,20 @@ __decorate([
     __metadata("design:paramtypes", [fabric_contract_api_1.Context]),
     __metadata("design:returntype", Promise)
 ], AssetTransferContract.prototype, "CreateAsset", null);
+__decorate([
+    fabric_contract_api_1.Transaction(false),
+    fabric_contract_api_1.Returns("string"),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [fabric_contract_api_1.Context, String]),
+    __metadata("design:returntype", Promise)
+], AssetTransferContract.prototype, "ReadAsset", null);
+__decorate([
+    fabric_contract_api_1.Transaction(false),
+    fabric_contract_api_1.Returns("string"),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [fabric_contract_api_1.Context, String, String]),
+    __metadata("design:returntype", Promise)
+], AssetTransferContract.prototype, "ReadAssetPrivateDetails", null);
 AssetTransferContract = __decorate([
     fabric_contract_api_1.Info({ title: 'AssetTransfer', description: 'Smart contract for trading assets' })
 ], AssetTransferContract);

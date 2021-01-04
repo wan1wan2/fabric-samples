@@ -1,6 +1,5 @@
-/// <reference types="node" />
 export declare class State {
     ID: string;
-    serialize(): Buffer;
-    static deserialize<T>(buffer: Buffer): T | null;
+    serialize(): Uint8Array;
+    static deserialize<T>(buffer: Uint8Array): T | null;
 }

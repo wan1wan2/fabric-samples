@@ -16,6 +16,8 @@ const should = chai_1.default.should();
 chai_1.default.use(sinon_chai_1.default);
 chai_1.default.use(chai_as_promised_1.default);
 const orgName = 'Org1MSP';
+const orgCollectionName = `${orgName}PrivateCollection`;
+const assetCollection = "assetCollection";
 describe('test chaincode', () => {
     let sandbox = sinon_1.default.createSandbox();
     let mockStubAPI;
@@ -51,23 +53,70 @@ describe('test chaincode', () => {
         ctx.stub = mockStubAPI;
         ctx.clientIdentity = mockClientIdentity;
         mockStubAPI.getTransient = () => {
-            let testAsset = new asset_1.Asset();
-            testAsset.AppraisedValue = 200;
-            testAsset.Color = 'blue';
-            testAsset.ID = 'asset1';
-            testAsset.Size = 16;
-            testAsset.docType = 'asset';
+            let testAsset = getTestAsset();
             let result = new Map();
             result.set('asset_properties', Buffer.from(JSON.stringify(testAsset)));
             return result;
         };
         try {
             await contract.CreateAsset(ctx);
-            await contract.CreateAsset(ctx);
         }
         catch (e) {
             expect(e).to.be.null;
         }
     });
+    it('read asset should be success', async () => {
+        let contract = new assetTransfer_1.AssetTransferContract();
+        let ctx = contract.createContext();
+        ctx.stub = mockStubAPI;
+        ctx.clientIdentity = mockClientIdentity;
+        mockStubAPI.getPrivateData = async (collection) => {
+            if (collection === assetCollection) {
+                let testAsset = getTestAsset();
+                return testAsset.serialize();
+            }
+            throw new Error('unsupported collection');
+        };
+        try {
+            let assetText = await contract.ReadAsset(ctx, 'asset1');
+            expect(assetText && assetText.length > 0).to.be.true;
+        }
+        catch (e) {
+            expect(e).to.be.null;
+        }
+    });
+    it('read asset detail should be success', async () => {
+        let contract = new assetTransfer_1.AssetTransferContract();
+        let ctx = contract.createContext();
+        ctx.stub = mockStubAPI;
+        ctx.clientIdentity = mockClientIdentity;
+        mockStubAPI.getPrivateData = async (collection) => {
+            if (collection === collection) {
+                let testAsset = getTestAssetDetails();
+                return testAsset.serialize();
+            }
+            throw new Error('unsupported collection');
+        };
+        try {
+            let assetText = await contract.ReadAssetPrivateDetails(ctx, orgCollectionName, 'asset1');
+            expect(assetText && assetText.length > 0).to.be.true;
+        }
+        catch (e) {
+            expect(e).to.be.null;
+        }
+    });
+    function getTestAsset() {
+        let testAsset = new asset_1.Asset();
+        testAsset.AppraisedValue = 200;
+        testAsset.Color = 'blue';
+        testAsset.ID = 'asset1';
+        testAsset.Size = 16;
+        testAsset.docType = 'asset';
+        return testAsset;
+    }
+    function getTestAssetDetails() {
+        let testAssetDetail = new asset_1.AssetDetail('asset1', 200);
+        return testAssetDetail;
+    }
 });
 //# sourceMappingURL=chaincode-test.js.map

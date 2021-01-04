@@ -1,5 +1,6 @@
-import {Context, Contract, Info, Transaction} from 'fabric-contract-api';
+import {Context, Contract, Info, Returns, Transaction} from 'fabric-contract-api';
 import {Asset, AssetDetail} from './asset';
+import { State } from './libs/State';
 
 const assetCollection = "assetCollection"
 // const transferAgreementObjectType = "transferAgreement"
@@ -55,6 +56,43 @@ export class AssetTransferContract extends Contract {
         }
         
     }
+
+    @Transaction(false)
+    @Returns("string")
+    public async ReadAsset(ctx: Context, assetId: string): Promise<string> {
+        let assetBuffer = await ctx.stub.getPrivateData(assetCollection, assetId);
+        if (!assetBuffer) {
+            console.error(`fail to load asset: ${assetId}`);
+            return JSON.stringify({});
+        }
+
+        let asset = State.deserialize<Asset>(assetBuffer);
+        if (!asset) {
+            console.error(`fail to deserialize asset: ${assetId}`);
+            return JSON.stringify({});
+        }
+        console.log(`read asset success, assetId: ${assetId}, data: ${JSON.stringify(asset)}`);
+        return JSON.stringify(asset);
+    }
+
+    @Transaction(false)
+    @Returns("string")
+    public async ReadAssetPrivateDetails(ctx: Context, collect: string, assetId: string): Promise<string> {
+        let assetDetailBuffer = await ctx.stub.getPrivateData(collect, assetId);
+        if (!assetDetailBuffer) {
+            console.error(`fail to load asset detail: ${assetId}`);
+            return JSON.stringify({});
+        }
+
+        let assetDetail = State.deserialize<AssetDetail>(assetDetailBuffer);
+        if (!assetDetail) {
+            console.error(`fail to deserialize asset detail: ${assetId}`);
+            return JSON.stringify({});
+        }
+        console.log(`read asset detail success, assetId: ${assetId}, data: ${JSON.stringify(assetDetail)}`);
+        return JSON.stringify(assetDetail);
+    }
+
 
     private submittingClientIdentity(ctx: Context): string | null {
         let base64ID = ctx.clientIdentity.getID();
