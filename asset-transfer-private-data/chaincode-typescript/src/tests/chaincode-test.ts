@@ -144,6 +144,34 @@ describe('test chaincode', ()=> {
 
     });
 
+    it('agree transfer asset should be success', async ()=> {
+        let contract = new AssetTransferContract();
+        let ctx = contract.createContext();
+        ctx.stub = mockStubAPI;
+        ctx.clientIdentity = mockClientIdentity;
+        mockStubAPI.getTransient = () => {
+            let testAsset = getTestAsset();
+            let result = new Map<string, Uint8Array>();
+            result.set('asset_value', Buffer.from(testAsset.toJSON()));
+            return result;
+        }
+        mockStubAPI.getPrivateData = async (collection: string) => {
+            if (collection === assetCollection) {
+                let testAsset = getTestAsset();
+                return testAsset.serialize();
+            } 
+            throw new Error('unsupported collection');
+        }
+
+        try {
+            await contract.AgreeTransfer(ctx);
+        } catch (e) {
+            console.log(e);
+            expect(e).to.be.null;
+        }
+
+    });
+
     function getTestAsset(): Asset {
         let testAsset = new Asset({
             ID: 'asset1',
