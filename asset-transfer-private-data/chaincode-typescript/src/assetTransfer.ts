@@ -1,6 +1,7 @@
 import {Context, Contract, Info, Returns, Transaction} from 'fabric-contract-api';
 import {Asset, AssetDetail} from './models/asset';
 import { BaseModel } from './models/BaseModel';
+import { TransferAgreement } from './models/transferAgreement';
 
 const assetCollection = "assetCollection"
 const transferAgreementObjectType = "transferAgreement"
@@ -106,6 +107,61 @@ export class AssetTransferContract extends Contract {
 
     }
 
+    // input asset_owner
+    // assetID: string
+    // buyerMSP: string
+    @Transaction()
+    public async TransferAsset(ctx: Context): Promise<void> {
+
+        const transientMap: Map<string, Uint8Array> = ctx.stub.getTransient();
+        const transientJson = transientMap.get('asset_owner');
+        if (!transientJson || transientJson.length === 0) {
+            throw new Error(`asset owner not found in the transient map`);
+        }
+
+        interface TransientTransferInput {
+            assetID: string,
+            buyerMSP: string
+        }
+
+        let transientInput: TransientTransferInput = JSON.parse(transientJson.toString());
+        if (!transientInput) {
+            throw new Error(`fail to parse ${transientJson.toString()}`);
+        } else if (!transientInput.assetID || transientInput.assetID.length === 0) {
+            throw new Error(`input assetID empty`);
+        } else if (!transientInput.buyerMSP || transientInput.buyerMSP.length === 0) {
+            throw new Error(`input buyerMSP empty`);
+        }
+
+        this.verifyClientOrgMatchesPeerOrg(ctx);
+
+        let assetObj = await this.ReadAsset(ctx, transientInput.assetID);
+        let asset: Asset = new Asset(JSON.parse(assetObj));
+
+        await this.verifyAgreement(ctx, transientInput.assetID, asset.Owner, transientInput.buyerMSP);
+
+        let transferAgreementObj = await this.ReadTransferAgreement(ctx, transientInput.assetID);
+        if (transferAgreementObj == null) {
+            throw new Error(`failed ReadTransferAgreement to find buyerID: ${transientInput.assetID}`);
+        }
+        let transferAgreement: TransferAgreement = JSON.parse(transferAgreementObj);
+        if (!transferAgreement || !transferAgreement.BuyerID || transferAgreement.BuyerID.length === 0) {
+            throw new Error(`BuyerID not found in TransferAgreement for ${transientInput.assetID}`);
+        }
+
+        asset.Owner = transferAgreement.BuyerID;
+        await ctx.stub.putPrivateData(assetCollection, asset.ID, asset.serialize());
+
+        const ownersCollection = this.getCollectionName(ctx);
+
+        // Delete the asset appraised value from this organization's private data collection
+        await ctx.stub.deletePrivateData(ownersCollection, transientInput.assetID);
+
+        // Delete the transfer agreement from the asset collection
+        const transferAgreeKey = ctx.stub.createCompositeKey(transferAgreementObjectType, [transientInput.assetID]);
+        await ctx.stub.deletePrivateData(assetCollection, transferAgreeKey);
+    }
+
     @Transaction(false)
     @Returns("string")
     public async ReadAsset(ctx: Context, assetId: string): Promise<string> {
@@ -144,6 +200,19 @@ export class AssetTransferContract extends Contract {
         return result;
     }
 
+    @Transaction(false)
+    @Returns("string")
+    public async ReadTransferAgreement(ctx: Context, assetId: string): Promise<string|null> {
+        let transferAgreeKey: string = ctx.stub.createCompositeKey(transferAgreementObjectType, [assetId]);
+        let buyerIdentity = await ctx.stub.getPrivateData(assetCollection, transferAgreeKey);
+        if (!buyerIdentity || buyerIdentity.length === 0) {
+            console.error(`TransferAgreement for ${assetId} does not exist`);
+            return null;
+        }
+        let agreement = new TransferAgreement(assetId, buyerIdentity.toString());
+        return agreement.toJSON();
+    }
+
     private submittingClientIdentity(ctx: Context): string | null {
         let base64ID = ctx.clientIdentity.getID();
         return base64ID
@@ -167,5 +236,36 @@ export class AssetTransferContract extends Contract {
             throw new Error(`get client MSPID Error`);
         }
         return `${clientMSPID}PrivateCollection`;
+    }
+
+    private async verifyAgreement(ctx: Context, assetID: string, owner: string, buyerMSP: string) {
+
+        // Check 1: verify that the transfer is being initiatied by the owner
+        const clientId = this.submittingClientIdentity(ctx);
+        if (!clientId) {
+            throw new Error('cannot get clientId');
+        } else if (clientId != owner) {
+            throw new Error('error: submitting client identity does not own asset');
+        }
+
+        // Check 2: verify that the buyer has agreed to the appraised value
+        const collectionOwner = this.getCollectionName(ctx);
+        const collectionBuyer = `${buyerMSP}PrivateCollection`;
+
+        const ownerAppraisedValueHash = await ctx.stub.getPrivateDataHash(collectionOwner, assetID);
+        if (!ownerAppraisedValueHash || ownerAppraisedValueHash.length === 0) {
+            throw new Error(`hash of appraised value for ${assetID} does not exist in collection ${collectionOwner}`);
+        }
+
+        const buyerAppraisedValueHash = await ctx.stub.getPrivateDataHash(collectionBuyer, assetID);
+        if (!buyerAppraisedValueHash || buyerAppraisedValueHash.length === 0) {
+            throw new Error(`hash of appraised value for ${assetID} does not exist in collection ${collectionBuyer}. `
+                +`AgreeToTransfer must be called by the buyer first`)
+        }
+
+        if (ownerAppraisedValueHash.toString() != buyerAppraisedValueHash.toString()) {
+            throw new Error(`hash for appraised value for owner ${ownerAppraisedValueHash.toString()}`+
+            +` does not value for seller ${buyerAppraisedValueHash.toString()}`);
+        }
     }
 }
