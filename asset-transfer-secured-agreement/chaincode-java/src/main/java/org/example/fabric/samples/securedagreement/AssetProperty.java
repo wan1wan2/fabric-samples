@@ -4,7 +4,7 @@ import org.json.JSONObject;
 
 import java.nio.charset.StandardCharsets;
 
-public class AssetProperty {
+public final class AssetProperty {
 
     private final String assetID;
 
@@ -16,7 +16,8 @@ public class AssetProperty {
 
     private final String salt;
 
-    public AssetProperty(String assetID, String objectType, String color, int size, String salt) {
+    public AssetProperty(final String assetID, final String objectType, final String color,
+                         final int size, final String salt) {
         this.assetID = assetID;
         this.objectType = objectType;
         this.color = color;

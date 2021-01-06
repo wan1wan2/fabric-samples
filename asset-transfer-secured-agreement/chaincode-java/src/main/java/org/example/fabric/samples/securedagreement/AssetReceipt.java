@@ -7,7 +7,7 @@ import org.json.JSONObject;
 import java.nio.charset.StandardCharsets;
 
 @DataType()
-public class AssetReceipt {
+public final class AssetReceipt {
 
     @Property()
     private final String assetID;
@@ -18,7 +18,7 @@ public class AssetReceipt {
     @Property()
     private final long timestamp;
 
-    public AssetReceipt(String assetID, int price, long timestamp) {
+    public AssetReceipt(final String assetID, final int price, final long timestamp) {
         this.assetID = assetID;
         this.price = price;
         this.timestamp = timestamp;

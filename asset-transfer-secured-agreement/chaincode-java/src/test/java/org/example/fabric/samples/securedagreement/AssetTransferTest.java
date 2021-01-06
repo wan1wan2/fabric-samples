@@ -33,7 +33,7 @@ public class AssetTransferTest {
             Map<String, byte[]> transientMap = new HashMap<>();
             when(stub.getTransient()).thenReturn(transientMap);
 
-            Throwable thrown = catchThrowable(()-> contract.createAsset(ctx, "asset1", "public description text"));
+            Throwable thrown = catchThrowable(() -> contract.createAsset(ctx, "asset1", "public description text"));
 
             assertThat(thrown).isInstanceOf(ChaincodeException.class).hasNoCause();
             assertThat(((ChaincodeException) thrown).getPayload()).isEqualTo("INCOMPLETE_INPUT".getBytes());
@@ -52,12 +52,12 @@ public class AssetTransferTest {
             when(ctx.getClientIdentity()).thenReturn(ci);
 
             Map<String, byte[]> transientMap = new HashMap<>();
-            AssetProperty assetProperty = new AssetProperty("asset1", "asset_properties"
-                    , "blue", 16, "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3");
+            AssetProperty assetProperty = new AssetProperty("asset1", "asset_properties",
+                    "blue", 16, "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3");
             transientMap.put("asset_properties", assetProperty.serialize());
             when(stub.getTransient()).thenReturn(transientMap);
 
-            Throwable thrown = catchThrowable(()-> contract.createAsset(ctx, "asset1", "public description text"));
+            Throwable thrown = catchThrowable(() -> contract.createAsset(ctx, "asset1", "public description text"));
             assertThat(thrown).isInstanceOf(ChaincodeException.class).hasNoCause();
             assertThat(((ChaincodeException) thrown).getPayload()).isEqualTo("INVALID_ACCESS".getBytes());
         }
@@ -75,8 +75,8 @@ public class AssetTransferTest {
             when(ctx.getClientIdentity()).thenReturn(ci);
 
             Map<String, byte[]> transientMap = new HashMap<>();
-            AssetProperty assetProperty = new AssetProperty("asset1", "asset_properties"
-                    , "blue", 16, "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3");
+            AssetProperty assetProperty = new AssetProperty("asset1", "asset_properties",
+                    "blue", 16, "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3");
             transientMap.put("asset_properties", assetProperty.serialize());
             when(stub.getTransient()).thenReturn(transientMap);
 
@@ -100,7 +100,7 @@ public class AssetTransferTest {
             when(ci.getMSPID()).thenReturn("another org");
             when(ctx.getClientIdentity()).thenReturn(ci);
 
-            Throwable thrown = catchThrowable(()->
+            Throwable thrown = catchThrowable(() ->
                     contract.changePublicDescription(ctx, "asset1", "new publish description"));
             assertThat(thrown).isInstanceOf(ChaincodeException.class).hasNoCause();
             assertThat(((ChaincodeException) thrown).getPayload()).isEqualTo("INVALID_ACCESS".getBytes());
@@ -178,6 +178,128 @@ public class AssetTransferTest {
         }
 
         @Test
+        public void verifyAssetPropertiesSuccess() {
+            AssetTransfer contract = new AssetTransfer();
+            Context ctx = mock(Context.class);
+            ChaincodeStub stub = mock(ChaincodeStub.class);
+            when(ctx.getStub()).thenReturn(stub);
+            Asset asset = getTestAsset();
+            when(stub.getState("asset1")).thenReturn(asset.serialize());
+
+            AssetProperty assetProperty = getTestAssetProperty();
+            Map<String, byte[]> transientMap = new HashMap<>();
+            transientMap.put("asset_properties", assetProperty.serialize());
+            when(stub.getTransient()).thenReturn(transientMap);
+
+            MessageDigest digest;
+            try {
+                digest = MessageDigest.getInstance("SHA-256");
+            } catch (NoSuchAlgorithmException e) {
+                assertThat(e).isEqualTo(null);
+                return;
+            }
+            String collectionSeller = buildCollectionName(testOrgOneMSP);
+            byte[] hashedProperty = digest.digest(assetProperty.serialize());
+            when(stub.getPrivateDataHash(collectionSeller, asset.getAssetID()))
+                    .thenReturn(hashedProperty);
+
+            contract.verifyAssetProperties(ctx, "asset1");
+        }
+
+        @Test
+        public void verifyAssetPropertiesReturnNoTransient() {
+            AssetTransfer contract = new AssetTransfer();
+            Context ctx = mock(Context.class);
+            ChaincodeStub stub = mock(ChaincodeStub.class);
+            when(ctx.getStub()).thenReturn(stub);
+            Asset asset = getTestAsset();
+            when(stub.getState("asset1")).thenReturn(asset.serialize());
+
+            AssetProperty assetProperty = getTestAssetProperty();
+            MessageDigest digest;
+            try {
+                digest = MessageDigest.getInstance("SHA-256");
+            } catch (NoSuchAlgorithmException e) {
+                assertThat(e).isEqualTo(null);
+                return;
+            }
+            String collectionSeller = buildCollectionName(testOrgOneMSP);
+            byte[] hashedProperty = digest.digest(assetProperty.serialize());
+            when(stub.getPrivateDataHash(collectionSeller, asset.getAssetID()))
+                    .thenReturn(hashedProperty);
+
+            Throwable thrown = catchThrowable(() ->
+                    contract.verifyAssetProperties(ctx, "asset1"));
+            assertThat(thrown).isInstanceOf(ChaincodeException.class).hasNoCause();
+            assertThat(((ChaincodeException) thrown).getPayload()).isEqualTo("INCOMPLETE_INPUT".getBytes());
+
+        }
+
+        @Test
+        public void verifyAssetPropertiesReturnNoPrivateData() {
+            AssetTransfer contract = new AssetTransfer();
+            Context ctx = mock(Context.class);
+            ChaincodeStub stub = mock(ChaincodeStub.class);
+            when(ctx.getStub()).thenReturn(stub);
+            Asset asset = getTestAsset();
+            when(stub.getState("asset1")).thenReturn(asset.serialize());
+
+            AssetProperty assetProperty = getTestAssetProperty();
+            Map<String, byte[]> transientMap = new HashMap<>();
+            transientMap.put("asset_properties", assetProperty.serialize());
+            when(stub.getTransient()).thenReturn(transientMap);
+
+            MessageDigest digest;
+            try {
+                digest = MessageDigest.getInstance("SHA-256");
+            } catch (NoSuchAlgorithmException e) {
+                assertThat(e).isEqualTo(null);
+                return;
+            }
+
+            Throwable thrown = catchThrowable(() ->
+                    contract.verifyAssetProperties(ctx, "asset1"));
+            assertThat(thrown).isInstanceOf(ChaincodeException.class).hasNoCause();
+            assertThat(((ChaincodeException) thrown).getPayload()).isEqualTo("ASSET_NOT_FOUND".getBytes());
+
+        }
+
+        @Test
+        public void verifyAssetPropertiesReturnHashDataError() {
+            AssetTransfer contract = new AssetTransfer();
+            Context ctx = mock(Context.class);
+            ChaincodeStub stub = mock(ChaincodeStub.class);
+            when(ctx.getStub()).thenReturn(stub);
+            Asset asset = getTestAsset();
+            when(stub.getState("asset1")).thenReturn(asset.serialize());
+
+            AssetProperty assetProperty = getTestAssetProperty();
+            Map<String, byte[]> transientMap = new HashMap<>();
+            transientMap.put("asset_properties", assetProperty.serialize());
+            when(stub.getTransient()).thenReturn(transientMap);
+
+            MessageDigest digest;
+            try {
+                digest = MessageDigest.getInstance("SHA-256");
+            } catch (NoSuchAlgorithmException e) {
+                assertThat(e).isEqualTo(null);
+                return;
+            }
+
+            String collectionSeller = buildCollectionName(testOrgOneMSP);
+            AssetProperty assetProperty2 = getTestAssetProperty2();
+            byte[] hashedProperty = digest.digest(assetProperty2.serialize());
+            when(stub.getPrivateDataHash(collectionSeller, asset.getAssetID()))
+                    .thenReturn(hashedProperty);
+
+            Throwable thrown = catchThrowable(() ->
+                    contract.verifyAssetProperties(ctx, "asset1"));
+            assertThat(thrown).isInstanceOf(ChaincodeException.class).hasNoCause();
+            assertThat(((ChaincodeException) thrown).getPayload()).isEqualTo("PROPERTY_NOT_EQUAL".getBytes());
+
+        }
+
+        @Test
         public void transferAssetSuccess() {
             AssetTransfer contract = new AssetTransfer();
             Asset testAsset = getTestAsset();
@@ -213,10 +335,27 @@ public class AssetTransferTest {
             transientMap.put("asset_properties", assetProperty.serialize());
             when(stub.getTransient()).thenReturn(transientMap);
 
-            Throwable thrown = catchThrowable(()->
-                    contract.transferAsset(ctx, "asset1", testOrgTwoMSP) );
+            Throwable thrown = catchThrowable(() ->
+                    contract.transferAsset(ctx, "asset1", testOrgTwoMSP));
             assertThat(thrown).isInstanceOf(ChaincodeException.class).hasNoCause();
             assertThat(((ChaincodeException) thrown).getPayload()).isEqualTo("PRICE_NOT_EQUAL".getBytes());
+        }
+
+        @Test
+        public void transferAssetTransientMapError() {
+            AssetTransfer contract = new AssetTransfer();
+            Asset testAsset = getTestAsset();
+
+            Context ctx = mock(Context.class);
+            ChaincodeStub stub = prepareTransferAssetTest(ctx, testAsset);
+            assertThat(stub).isNotNull();
+            Map<String, byte[]> transientMap = new HashMap<>();
+            when(stub.getTransient()).thenReturn(transientMap);
+
+            Throwable thrown = catchThrowable(() ->
+                    contract.transferAsset(ctx, "asset1", testOrgTwoMSP));
+            assertThat(thrown).isInstanceOf(ChaincodeException.class).hasNoCause();
+            assertThat(((ChaincodeException) thrown).getPayload()).isEqualTo("INCOMPLETE_INPUT".getBytes());
         }
 
         @Test
@@ -235,8 +374,8 @@ public class AssetTransferTest {
             transientMap.put("asset_properties", assetProperty.serialize());
             when(stub.getTransient()).thenReturn(transientMap);
 
-            Throwable thrown = catchThrowable(()->
-                    contract.transferAsset(ctx, "asset1", testOrgTwoMSP) );
+            Throwable thrown = catchThrowable(() ->
+                    contract.transferAsset(ctx, "asset1", testOrgTwoMSP));
             assertThat(thrown).isInstanceOf(ChaincodeException.class).hasNoCause();
             assertThat(((ChaincodeException) thrown).getPayload()).isEqualTo("PROPERTY_NOT_EQUAL".getBytes());
         }
@@ -257,13 +396,13 @@ public class AssetTransferTest {
             transientMap.put("asset_properties", assetProperty.serialize());
             when(stub.getTransient()).thenReturn(transientMap);
 
-            Throwable thrown = catchThrowable(()->
-                    contract.transferAsset(ctx, "asset1", testOrgThreeMSP) );
+            Throwable thrown = catchThrowable(() ->
+                    contract.transferAsset(ctx, "asset1", testOrgThreeMSP));
             assertThat(thrown).isInstanceOf(ChaincodeException.class).hasNoCause();
             assertThat(((ChaincodeException) thrown).getPayload()).isEqualTo("ASSET_NOT_FOUND".getBytes());
         }
 
-        private ChaincodeStub prepareTransferAssetTest(Context ctx, Asset asset) {
+        private ChaincodeStub prepareTransferAssetTest(final Context ctx, final Asset asset) {
 
             ChaincodeStub stub = mock(ChaincodeStub.class);
             when(ctx.getStub()).thenReturn(stub);
@@ -345,9 +484,8 @@ public class AssetTransferTest {
             when(ci.getMSPID()).thenReturn(testOrgOneMSP);
             when(ctx.getClientIdentity()).thenReturn(ci);
 
-            AssetProperty assetProperty = new AssetProperty("asset1", "asset_properties"
-                    , "blue", 16, "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3");
-            when(stub.getPrivateData("_implicit_org_"+testOrgOneMSP, "asset1"))
+            AssetProperty assetProperty = getTestAssetProperty();
+            when(stub.getPrivateData(buildCollectionName(testOrgOneMSP), "asset1"))
                     .thenReturn(assetProperty.serialize());
             String assetForSaleString = contract.getAssetPrivateProperties(ctx, "asset1");
             assertThat(assetForSaleString).isNotNull();
@@ -362,7 +500,7 @@ public class AssetTransferTest {
             Asset testAsset = getTestAsset();
             when(stub.getState("asset1")).thenReturn(testAsset.serialize());
 
-            Throwable thrown = catchThrowable(()-> contract.readAsset(ctx, "asset2"));
+            Throwable thrown = catchThrowable(() -> contract.readAsset(ctx, "asset2"));
             assertThat(thrown).isInstanceOf(ChaincodeException.class).hasNoCause();
             assertThat(((ChaincodeException) thrown).getPayload()).isEqualTo("ASSET_NOT_FOUND".getBytes());
         }
@@ -397,7 +535,7 @@ public class AssetTransferTest {
             when(ctx.getClientIdentity()).thenReturn(ci);
 
             String testPriceContent = "price content";
-            String collection = String.format("_implicit_org_%s", testOrgOneMSP);
+            String collection = buildCollectionName(testOrgOneMSP);
             when(stub.getPrivateData(collection, typeAssetForSale + "asset1"))
                     .thenReturn(testPriceContent.getBytes(StandardCharsets.UTF_8));
 
@@ -422,7 +560,7 @@ public class AssetTransferTest {
             when(ctx.getClientIdentity()).thenReturn(ci);
 
             String testPriceContent = "price content";
-            String collection = String.format("_implicit_org_%s", testOrgOneMSP);
+            String collection = buildCollectionName(testOrgOneMSP);
             when(stub.getPrivateData(collection, typeAssetBid + "asset1"))
                     .thenReturn(testPriceContent.getBytes(StandardCharsets.UTF_8));
 
@@ -445,24 +583,23 @@ public class AssetTransferTest {
     }
 
     private AssetProperty getTestAssetProperty() {
-        return new AssetProperty("asset1", "asset_properties"
-                , "red", 16, "test salt");
+        return new AssetProperty("asset1", "asset_properties",
+                "red", 16, "test salt");
     }
 
     private AssetProperty getTestAssetProperty2() {
-        return new AssetProperty("asset1", "asset_properties"
-                , "blue", 16, "test salt");
+        return new AssetProperty("asset1", "asset_properties",
+                "blue", 16, "test salt");
     }
 
-    private String buildCollectionName(String clientOrgID) {
+    private String buildCollectionName(final String clientOrgID) {
         return String.format("_implicit_org_%s", clientOrgID);
     }
 
-    private static final String testOrg1Client = "testOrg1User";
-    private static final String testOrgOneMSP = "TestOrg1";
-    private static final String testOrg2Client = "testOrg2User";
-    private static final String testOrgTwoMSP = "TestOrg2";
-    private static final String testOrgThreeMSP = "TestOrg3";
+    private final String testOrg1Client = "testOrg1User";
+    private final String testOrgOneMSP = "TestOrg1";
+    private final String testOrgTwoMSP = "TestOrg2";
+    private final String testOrgThreeMSP = "TestOrg3";
     private final String typeAssetForSale = "S";
     private final String typeAssetBid = "B";
     private final String typeAssetSaleReceipt = "SR";

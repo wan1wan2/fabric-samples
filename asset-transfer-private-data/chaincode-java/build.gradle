@@ -48,8 +48,21 @@ checkstyleTest {
     source ='src/test/java'
 }
 
+
 jacocoTestReport {
     dependsOn test
+}
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.9
+            }
+        }
+    }
+
+    finalizedBy jacocoTestReport
 }
 
 test {
@@ -59,4 +72,5 @@ test {
     }
 }
 
+check.dependsOn jacocoTestCoverageVerification
 installDist.dependsOn check

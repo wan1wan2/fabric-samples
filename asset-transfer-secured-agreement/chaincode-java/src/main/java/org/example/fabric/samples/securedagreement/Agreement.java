@@ -5,7 +5,7 @@ import org.json.JSONObject;
 
 import java.nio.charset.StandardCharsets;
 
-public class Agreement {
+public final class Agreement {
 
     private final String assetID;
 
@@ -17,17 +17,17 @@ public class Agreement {
         return price;
     }
 
-    public Agreement(String assetID, int price, String tradeID) {
+    public Agreement(final String assetID, final int price, final String tradeID) {
         this.assetID = assetID;
         this.price = price;
         this.tradeID = tradeID;
     }
 
-    public static Agreement deserialize(byte[] agreementJSON) {
+    public static Agreement deserialize(final byte[] agreementJSON) {
         return deserialize(new String(agreementJSON, StandardCharsets.UTF_8));
     }
 
-    public static Agreement deserialize(String agreementJSON) {
+    public static Agreement deserialize(final String agreementJSON) {
         try {
             JSONObject jsonObject = new JSONObject(agreementJSON);
             final String assetId = jsonObject.getString("asset_id");

@@ -1,6 +1,5 @@
 package org.example.fabric.samples.securedagreement;
 
-import org.bouncycastle.jcajce.provider.digest.SHA256;
 import org.hyperledger.fabric.contract.Context;
 import org.hyperledger.fabric.contract.ContractInterface;
 import org.hyperledger.fabric.contract.annotation.Contract;
@@ -17,9 +16,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Map;
 
-@Contract(name="securedAgreement")
+@Contract(name = "securedAgreement")
 @Default
-public class AssetTransfer implements ContractInterface {
+public final class AssetTransfer implements ContractInterface {
 
     private final String typeAssetForSale = "S";
     private final String typeAssetBid = "B";
@@ -43,7 +42,7 @@ public class AssetTransfer implements ContractInterface {
      * @return Asset Object
      */
     @Transaction(intent = Transaction.TYPE.EVALUATE)
-    public Asset readAsset(final Context ctx, String assetID) {
+    public Asset readAsset(final Context ctx, final String assetID) {
         byte[] assetJSON = ctx.getStub().getState(assetID);
         if (assetJSON == null || assetJSON.length == 0) {
             String errorMessage = String.format("%s does not exist", assetID);
@@ -61,12 +60,12 @@ public class AssetTransfer implements ContractInterface {
      * @return Asset Private Data
      */
     @Transaction(intent = Transaction.TYPE.EVALUATE)
-    public String getAssetPrivateProperties(final Context ctx, String assetID) {
+    public String getAssetPrivateProperties(final Context ctx, final String assetID) {
         String collection = getClientImplicitCollectionName(ctx);
         byte[] immutableProperties = ctx.getStub().getPrivateData(collection, assetID);
         if (immutableProperties == null || immutableProperties.length == 0) {
-            String errorMessage = String.format("asset private details does not exist in client org's collection: %s"
-                    , assetID);
+            String errorMessage = String
+                    .format("asset private details does not exist in client org's collection: %s", assetID);
             System.err.println(errorMessage);
             throw new ChaincodeException(errorMessage, AssetTransferErrors.ASSET_NOT_FOUND.toString());
         }
@@ -75,16 +74,16 @@ public class AssetTransfer implements ContractInterface {
     }
 
     @Transaction(intent = Transaction.TYPE.EVALUATE)
-    public String getAssetSalesPrice(final Context ctx, String assetID) {
+    public String getAssetSalesPrice(final Context ctx, final String assetID) {
         return getAssetPrice(ctx, assetID, typeAssetForSale);
     }
 
     @Transaction(intent = Transaction.TYPE.EVALUATE)
-    public String getAssetBidPrice(final Context ctx, String assetID) {
+    public String getAssetBidPrice(final Context ctx, final String assetID) {
         return getAssetPrice(ctx, assetID, typeAssetBid);
     }
 
-    private String getAssetPrice(final Context ctx, String assetID, String priceType) {
+    private String getAssetPrice(final Context ctx, final String assetID, final String priceType) {
         String collection = getClientImplicitCollectionName(ctx);
         CompositeKey assetPriceKey = ctx.getStub().createCompositeKey(priceType, assetID);
         byte[] price = ctx.getStub().getPrivateData(collection, assetPriceKey.toString());
@@ -133,13 +132,13 @@ public class AssetTransfer implements ContractInterface {
      * @return Asset object with new publish description
      */
     @Transaction(intent = Transaction.TYPE.SUBMIT)
-    public Asset changePublicDescription(final Context ctx, String assetID, String newDescription) {
+    public Asset changePublicDescription(final Context ctx, final String assetID, final String newDescription) {
         String clientOrgID = getClientOrgID(ctx, false);
         Asset asset = readAsset(ctx, assetID);
 
         if (!clientOrgID.equals(asset.getOwnerOrg())) {
-            String errorMessage = String.format("a client from %s cannot update the description of a asset owned by %s"
-                    , clientOrgID, asset.getOwnerOrg());
+            String errorMessage = String.format("a client from %s cannot update the description of a asset owned by %s",
+                    clientOrgID, asset.getOwnerOrg());
             System.err.println(errorMessage);
             throw new ChaincodeException(errorMessage, AssetTransferErrors.INVALID_ACCESS.toString());
         }
@@ -155,13 +154,13 @@ public class AssetTransfer implements ContractInterface {
      * @param assetID Asset id
      */
     @Transaction(intent = Transaction.TYPE.SUBMIT)
-    public void agreeToSell(final Context ctx, String assetID) {
+    public void agreeToSell(final Context ctx, final String assetID) {
         Asset asset = readAsset(ctx, assetID);
         String clientOrgID = getClientOrgID(ctx, true);
 
         if (!clientOrgID.equals(asset.getOwnerOrg())) {
-            String errorMessage = String.format("a client from %s cannot update the description of a asset owned by %s"
-                    , clientOrgID, asset.getOwnerOrg());
+            String errorMessage = String.format("a client from %s cannot update the description of a asset owned by %s",
+                    clientOrgID, asset.getOwnerOrg());
             System.err.println(errorMessage);
             throw new ChaincodeException(errorMessage, AssetTransferErrors.INVALID_ACCESS.toString());
         }
@@ -170,7 +169,7 @@ public class AssetTransfer implements ContractInterface {
     }
 
     @Transaction(intent = Transaction.TYPE.SUBMIT)
-    public void agreeToBuy(final Context ctx, String assetID) {
+    public void agreeToBuy(final Context ctx, final String assetID) {
         readAsset(ctx, assetID);
         agreeToPrice(ctx, assetID, typeAssetBid);
     }
@@ -181,7 +180,7 @@ public class AssetTransfer implements ContractInterface {
      * @param assetID Asset id
      * @param priceType typeAssetForSale / typeAssetBid
      */
-    private void agreeToPrice(final Context ctx, String assetID, String priceType) {
+    private void agreeToPrice(final Context ctx, final String assetID, final String priceType) {
         Map<String, byte[]> transientMap = ctx.getStub().getTransient();
         if (!transientMap.containsKey("asset_price")) {
             String errorMessage = "asset_price key not found in the transient map";
@@ -196,6 +195,46 @@ public class AssetTransfer implements ContractInterface {
         ctx.getStub().putPrivateData(collection, assetPriceKey.toString(), price);
     }
 
+    @Transaction(intent = Transaction.TYPE.EVALUATE)
+    public void verifyAssetProperties(final Context ctx, final String assetID) {
+        Map<String, byte[]> transientMap = ctx.getStub().getTransient();
+        if (!transientMap.containsKey("asset_properties")) {
+            String errorMessage = "asset_properties key not found in the transient map";
+            System.err.println(errorMessage);
+            throw new ChaincodeException(errorMessage, AssetTransferErrors.INCOMPLETE_INPUT.toString());
+        }
+        byte[] immutablePropertiesJSON = transientMap.get("asset_properties");
+        Asset asset = readAsset(ctx, assetID);
+        String collectionOwner = buildCollectionName(asset.getOwnerOrg());
+        verifyAssetPropertiesHash(ctx, assetID, collectionOwner, immutablePropertiesJSON);
+    }
+
+    private void verifyAssetPropertiesHash(final Context ctx, final String assetID, final String collectionOwner,
+                                            final byte[] immutablePropertiesJSON) {
+        byte[] immutablePropertiesOnChainHash = ctx.getStub().getPrivateDataHash(collectionOwner, assetID);
+        if (immutablePropertiesOnChainHash == null || immutablePropertiesOnChainHash.length == 0) {
+            String errorMessage = String.format("asset private properties hash does not exist: %s", assetID);
+            System.err.println(errorMessage);
+            throw new ChaincodeException(errorMessage, AssetTransferErrors.ASSET_NOT_FOUND.toString());
+        }
+        MessageDigest digest;
+        try {
+            digest = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            throw new ChaincodeException(e.getMessage(), AssetTransferErrors.UNKNOWN_ISSUE.toString());
+        }
+        byte[] calculatedPropertiesHash = digest.digest(immutablePropertiesJSON);
+
+        if (!Arrays.equals(calculatedPropertiesHash, immutablePropertiesOnChainHash)) {
+            String errorMessage = String.format("hash %s for passed immutable properties %s does not match on-chain hash %s",
+                    new String(calculatedPropertiesHash, StandardCharsets.UTF_8),
+                    new String(immutablePropertiesJSON, StandardCharsets.UTF_8),
+                    new String(immutablePropertiesOnChainHash, StandardCharsets.UTF_8));
+            System.err.println(errorMessage);
+            throw new ChaincodeException(errorMessage, AssetTransferErrors.PROPERTY_NOT_EQUAL.toString());
+        }
+    }
+
     /**
      * TransferAsset checks transfer conditions and then transfers asset state to buyer.
      * TransferAsset can only be called by current owner
@@ -205,9 +244,9 @@ public class AssetTransfer implements ContractInterface {
      * @return asset after transfer owner
      */
     @Transaction(intent = Transaction.TYPE.SUBMIT)
-    public Asset transferAsset(final Context ctx, String assetID, String buyerOrgID) {
+    public Asset transferAsset(final Context ctx, final String assetID, final String buyerOrgID) {
 
-        String clientOrgID = getClientOrgID(ctx, true);
+        String clientOrgID = getClientOrgID(ctx, false);
         Map<String, byte[]> transientMap = ctx.getStub().getTransient();
         if (!transientMap.containsKey("asset_properties")) {
             String errorMessage = "asset_properties key not found in the transient map";
@@ -232,42 +271,20 @@ public class AssetTransfer implements ContractInterface {
     }
 
     // verifyTransferConditions checks that client org currently owns asset and that both parties have agreed on price
-    private void verifyTransferConditions(final Context ctx, Asset asset, byte[] immutablePropertiesJSON
-            , String clientOrgID, String buyerOrgID, byte[] priceJSON) {
+    private void verifyTransferConditions(final Context ctx, final Asset asset, final byte[] immutablePropertiesJSON,
+                                          final String clientOrgID, final String buyerOrgID, final byte[] priceJSON) {
 
         // CHECK1: Auth check to ensure that client's org actually owns the asset
         if (!clientOrgID.equals(asset.getOwnerOrg())) {
-            String errorMessage = String.format("a client from %s cannot transfer a asset owned by %s"
-                    , clientOrgID, asset.getOwnerOrg());
+            String errorMessage = String.format("a client from %s cannot transfer a asset owned by %s",
+                    clientOrgID, asset.getOwnerOrg());
             System.err.println(errorMessage);
             throw new ChaincodeException(errorMessage, AssetTransferErrors.INVALID_ACCESS.toString());
         }
 
         // CHECK2: Verify that the hash of the passed immutable properties matches the on-chain hash
         String collectionSeller = buildCollectionName(clientOrgID);
-        byte[] immutablePropertiesOnChainHash = ctx.getStub().getPrivateDataHash(collectionSeller, asset.getAssetID());
-        if (immutablePropertiesOnChainHash == null || immutablePropertiesOnChainHash.length == 0) {
-            String errorMessage = String.format("asset private properties hash does not exist: %s", asset.getAssetID());
-            System.err.println(errorMessage);
-            throw new ChaincodeException(errorMessage, AssetTransferErrors.ASSET_NOT_FOUND.toString());
-        }
-
-        MessageDigest digest;
-        try {
-            digest = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            throw new ChaincodeException(e.getMessage(), AssetTransferErrors.UNKNOWN_ISSUE.toString());
-        }
-        byte[] calculatedPropertiesHash = digest.digest(immutablePropertiesJSON);
-
-        if (!Arrays.equals(calculatedPropertiesHash, immutablePropertiesOnChainHash)) {
-            String errorMessage = String.format("hash %s for passed immutable properties %s does not match on-chain hash %s",
-                    new String(calculatedPropertiesHash, StandardCharsets.UTF_8),
-                    new String(immutablePropertiesJSON, StandardCharsets.UTF_8),
-                    new String(immutablePropertiesOnChainHash, StandardCharsets.UTF_8));
-            System.err.println(errorMessage);
-            throw new ChaincodeException(errorMessage, AssetTransferErrors.PROPERTY_NOT_EQUAL.toString());
-        }
+        verifyAssetPropertiesHash(ctx, asset.getAssetID(), collectionSeller, immutablePropertiesJSON);
 
         // CHECK3: Verify that seller and buyer agreed on the same price
 
@@ -290,10 +307,16 @@ public class AssetTransfer implements ContractInterface {
             throw new ChaincodeException(errorMessage, AssetTransferErrors.ASSET_NOT_FOUND.toString());
         }
 
+        MessageDigest digest;
+        try {
+            digest = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            throw new ChaincodeException(e.getMessage(), AssetTransferErrors.UNKNOWN_ISSUE.toString());
+        }
         byte[] calculatedPriceHash = digest.digest(priceJSON);
         if (!Arrays.equals(calculatedPriceHash, sellerPriceHash)) {
-            String errorMessage = String.format("hash %s for passed price JSON %s does not match on-chain hash %s" +
-                            ", seller hasn't agreed to the passed trade id and price",
+            String errorMessage = String.format("hash %s for passed price JSON %s does not match on-chain hash %s"
+                            + ", seller hasn't agreed to the passed trade id and price",
                     new String(calculatedPriceHash, StandardCharsets.UTF_8),
                     new String(priceJSON, StandardCharsets.UTF_8),
                     new String(sellerPriceHash, StandardCharsets.UTF_8));
@@ -302,8 +325,8 @@ public class AssetTransfer implements ContractInterface {
         }
 
         if (!Arrays.equals(calculatedPriceHash, buyerPriceHash)) {
-            String errorMessage = String.format("hash %s for passed price JSON %s does not match on-chain hash %s" +
-                            ", buyer hasn't agreed to the passed trade id and price",
+            String errorMessage = String.format("hash %s for passed price JSON %s does not match on-chain hash %s"
+                            + ", buyer hasn't agreed to the passed trade id and price",
                     new String(calculatedPriceHash, StandardCharsets.UTF_8),
                     new String(priceJSON, StandardCharsets.UTF_8),
                     new String(sellerPriceHash, StandardCharsets.UTF_8));
@@ -313,8 +336,8 @@ public class AssetTransfer implements ContractInterface {
 
     }
 
-    private void transferAssetState(final Context ctx, Asset asset, byte[] immutablePropertiesJSON
-            , String clientOrgID, String buyerOrgID, int price) {
+    private void transferAssetState(final Context ctx, final Asset asset, final byte[] immutablePropertiesJSON,
+                                    final String clientOrgID, final String buyerOrgID, final int price) {
         asset.setOwnerOrg(buyerOrgID);
         ctx.getStub().putState(asset.getAssetID(), asset.serialize());
 
@@ -358,7 +381,7 @@ public class AssetTransfer implements ContractInterface {
      * @param verifyOrg need to verify client id
      * @return client msp id
      */
-    private String getClientOrgID(final Context ctx, boolean verifyOrg) {
+    private String getClientOrgID(final Context ctx, final boolean verifyOrg) {
         String clientOrgID = ctx.getClientIdentity().getMSPID();
 
         if (verifyOrg) {
@@ -373,17 +396,17 @@ public class AssetTransfer implements ContractInterface {
      * @param ctx contract context
      * @param clientOrgID msp id from client identity
      */
-    private void verifyClientOrgMatchesPeerOrg(final Context ctx, String clientOrgID) {
+    private void verifyClientOrgMatchesPeerOrg(final Context ctx, final String clientOrgID) {
         String peerMSPID = ctx.getStub().getMspId();
         if (!clientOrgID.equals(peerMSPID)) {
-            String errorMessage = String.format("Client from org %s is not authorized to read or write private data from an org %s peer"
-                    , clientOrgID, peerMSPID);
+            String errorMessage = String.format("Client from org %s is not authorized to read "
+                    + "or write private data from an org %s peer", clientOrgID, peerMSPID);
             System.err.println(errorMessage);
             throw new ChaincodeException(errorMessage, AssetTransferErrors.INVALID_ACCESS.toString());
         }
     }
 
-    private void setAssetStateBasedEndorsement(final Context ctx, String assetID, String orgToEndorse) {
+    private void setAssetStateBasedEndorsement(final Context ctx, final String assetID, final String orgToEndorse) {
         StateBasedEndorsement endorsementPolicy = StateBasedEndorsementFactory.getInstance()
                 .newStateBasedEndorsement(null);
         endorsementPolicy.addOrgs(StateBasedEndorsement.RoleType.RoleTypePeer, orgToEndorse);
@@ -391,13 +414,13 @@ public class AssetTransfer implements ContractInterface {
         ctx.getStub().setStateValidationParameter(assetID, policy);
     }
 
-    private String getClientImplicitCollectionName(Context ctx) {
+    private String getClientImplicitCollectionName(final Context ctx) {
         String clientOrgID = getClientOrgID(ctx, true);
         verifyClientOrgMatchesPeerOrg(ctx, clientOrgID);
         return buildCollectionName(clientOrgID);
     }
 
-    private String buildCollectionName(String clientOrgID) {
+    private String buildCollectionName(final String clientOrgID) {
         return String.format("_implicit_org_%s", clientOrgID);
     }
 }

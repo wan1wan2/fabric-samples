@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 @DataType()
-public class Asset {
+public final class Asset {
 
     @Property()
     private final String assetID;
@@ -31,23 +31,23 @@ public class Asset {
         return objectType;
     }
 
-    public void setOwnerOrg(String ownerOrg) {
-        this.ownerOrg = ownerOrg;
+    public void setOwnerOrg(final String value) {
+        this.ownerOrg = value;
     }
 
     public String getOwnerOrg() {
         return ownerOrg;
     }
 
-    public void setPublicDescription(String publicDescription) {
-        this.publicDescription = publicDescription;
+    public void setPublicDescription(final String value) {
+        this.publicDescription = value;
     }
 
     public String getPublicDescription() {
         return publicDescription;
     }
 
-    public Asset(String assetID, String ownerOrg, String publicDescription) {
+    public Asset(final String assetID, final String ownerOrg, final String publicDescription) {
         this.assetID = assetID;
         this.ownerOrg = ownerOrg;
         this.publicDescription = publicDescription;
@@ -63,11 +63,11 @@ public class Asset {
         return jsonObject.toString().getBytes(StandardCharsets.UTF_8);
     }
 
-    public static Asset deserialize(byte[] assetJSON) {
+    public static Asset deserialize(final byte[] assetJSON) {
         return deserialize(new String(assetJSON, StandardCharsets.UTF_8));
     }
 
-    public static Asset deserialize(String assetJSON) {
+    public static Asset deserialize(final String assetJSON) {
         try {
             JSONObject jsonObject = new JSONObject(assetJSON);
             final String assetId = jsonObject.getString("assetID");
@@ -80,9 +80,13 @@ public class Asset {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         Asset asset = (Asset) o;
         return Objects.equals(assetID, asset.getAssetID()) && Objects.equals(objectType, asset.getObjectType())
                 && Objects.equals(ownerOrg, asset.getOwnerOrg())
@@ -90,17 +94,17 @@ public class Asset {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(assetID, objectType, ownerOrg, publicDescription);
+    public String toString() {
+        return "Asset{"
+                + "assetID='" + assetID + '\''
+                + ", objectType='" + objectType + '\''
+                + ", ownerOrg='" + ownerOrg + '\''
+                + ", publicDescription='" + publicDescription + '\''
+                + '}';
     }
 
     @Override
-    public String toString() {
-        return "Asset{" +
-                "assetID='" + assetID + '\'' +
-                ", objectType='" + objectType + '\'' +
-                ", ownerOrg='" + ownerOrg + '\'' +
-                ", publicDescription='" + publicDescription + '\'' +
-                '}';
+    public int hashCode() {
+        return Objects.hash(assetID, objectType, ownerOrg, publicDescription);
     }
 }
