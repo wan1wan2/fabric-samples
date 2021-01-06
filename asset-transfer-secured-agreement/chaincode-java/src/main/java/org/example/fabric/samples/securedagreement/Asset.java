@@ -89,4 +89,14 @@ public class Asset {
     public int hashCode() {
         return Objects.hash(assetID, objectType, ownerOrg, publicDescription);
     }
+
+    @Override
+    public String toString() {
+        return "Asset{" +
+                "assetID='" + assetID + '\'' +
+                ", objectType='" + objectType + '\'' +
+                ", ownerOrg='" + ownerOrg + '\'' +
+                ", publicDescription='" + publicDescription + '\'' +
+                '}';
+    }
 }
