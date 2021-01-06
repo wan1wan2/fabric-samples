@@ -4,7 +4,7 @@ import org.json.JSONObject;
 
 import java.nio.charset.StandardCharsets;
 
-public class AssetForSale {
+public class AssetProperty {
 
     private final String assetID;
 
@@ -16,7 +16,7 @@ public class AssetForSale {
 
     private final String salt;
 
-    public AssetForSale(String assetID, String objectType, String color, int size, String salt) {
+    public AssetProperty(String assetID, String objectType, String color, int size, String salt) {
         this.assetID = assetID;
         this.objectType = objectType;
         this.color = color;
@@ -25,7 +25,12 @@ public class AssetForSale {
     }
 
     public byte[] serialize() {
-        String jsonString = new JSONObject(this).toString();
-        return jsonString.getBytes(StandardCharsets.UTF_8);
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("assetID", assetID);
+        jsonObject.put("objectType", objectType);
+        jsonObject.put("color", color);
+        jsonObject.put("size", size);
+        jsonObject.put("salt", salt);
+        return jsonObject.toString().getBytes(StandardCharsets.UTF_8);
     }
 }

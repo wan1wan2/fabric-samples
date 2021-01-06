@@ -55,8 +55,12 @@ public class Asset {
     }
 
     public byte[] serialize() {
-        String jsonString = new JSONObject(this).toString();
-        return jsonString.getBytes(StandardCharsets.UTF_8);
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("assetID", assetID);
+        jsonObject.put("ownerOrg", ownerOrg);
+        jsonObject.put("publicDescription", publicDescription);
+        jsonObject.put("objectType", objectType);
+        return jsonObject.toString().getBytes(StandardCharsets.UTF_8);
     }
 
     public static Asset deserialize(byte[] assetJSON) {
