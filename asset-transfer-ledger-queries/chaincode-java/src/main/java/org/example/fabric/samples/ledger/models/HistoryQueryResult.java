@@ -2,12 +2,18 @@ package org.example.fabric.samples.ledger.models;
 
 public final class HistoryQueryResult {
 
-    private Asset record;
+    private final Asset record;
 
-    private String txId;
+    private final String txId;
 
-    private long timestamp;
+    private final long timestamp;
 
-    private Boolean isDelete;
+    private final Boolean isDelete;
 
+    public HistoryQueryResult(final Asset record, final String txId, final long timestamp, final Boolean isDelete) {
+        this.record = record;
+        this.txId = txId;
+        this.timestamp = timestamp;
+        this.isDelete = isDelete;
+    }
 }

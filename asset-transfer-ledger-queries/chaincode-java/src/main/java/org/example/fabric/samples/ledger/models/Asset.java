@@ -15,19 +15,19 @@ public final class Asset {
     private final String assetID;
 
     @Property()
-    private final String docType;
+    private String docType;
 
     @Property()
-    private final String color;
+    private String color;
 
     @Property()
-    private final int size;
+    private int size;
 
     @Property()
-    private final String owner;
+    private String owner;
 
     @Property()
-    private final int appraisedValue;
+    private int appraisedValue;
 
     public String getAssetID() {
         return assetID;
@@ -43,6 +43,10 @@ public final class Asset {
 
     public int getSize() {
         return size;
+    }
+
+    public void setOwner(final String value) {
+        this.owner = value;
     }
 
     public String getOwner() {
@@ -63,6 +67,10 @@ public final class Asset {
         this.appraisedValue = appraisedValue;
     }
 
+    public Asset(final String assetID) {
+        this.assetID = assetID;
+    }
+
     @Override
     public String toString() {
         return "Asset{"
@@ -71,12 +79,12 @@ public final class Asset {
                 + ", color='" + color + '\''
                 + ", size=" + size
                 + ", owner='" + owner + '\''
-                + ", appraisedValue=" + appraisedValue +
-                '}';
+                + ", appraisedValue=" + appraisedValue
+                + '}';
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) {
             return true;
         }

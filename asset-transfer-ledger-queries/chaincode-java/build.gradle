@@ -70,5 +70,14 @@ test {
     }
 }
 
+sourceSets.main.resources.srcDirs += ["src/main/java"]
+
+task copyCouchDBIndexFiles(type: Copy) {
+    from ("$buildDir/resources/main/") {
+        include "META-INF/**"
+    }
+    into "$buildDir/install/ledger"
+}
+
 check.dependsOn jacocoTestCoverageVerification
 installDist.dependsOn check
