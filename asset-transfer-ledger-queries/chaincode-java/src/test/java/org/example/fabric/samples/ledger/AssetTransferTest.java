@@ -1,5 +1,7 @@
 package org.example.fabric.samples.ledger;
 
+import com.owlike.genson.GenericType;
+import com.owlike.genson.Genson;
 import org.example.fabric.samples.ledger.models.Asset;
 import org.example.fabric.samples.ledger.models.HistoryQueryResult;
 import org.example.fabric.samples.ledger.models.PaginatedQueryResult;
@@ -190,7 +192,8 @@ public class AssetTransferTest {
             when(ctx.getStub()).thenReturn(stub);
             when(stub.getStateByRange("", "")).thenReturn(new MockAssetResultsIterator());
 
-            List<Asset> assets = contract.getAssetsByRange(ctx, "", "");
+            String result = contract.getAssetsByRange(ctx, "", "");
+            List<Asset> assets = genson.deserialize(result, new GenericType<List<Asset>>() { });
             assertThat(assets).isNotNull();
             assertThat(assets.size()).isEqualTo(1);
         }
@@ -203,8 +206,8 @@ public class AssetTransferTest {
             when(ctx.getStub()).thenReturn(stub);
             when(stub.getStateByRangeWithPagination("", "", 10, ""))
                     .thenReturn(new MockAssetResultsIteratorWithMetadata());
-
-            List<Asset> assets = contract.getAssetsByRangeWithPagination(ctx, "", "", 10, "");
+            String result = contract.getAssetsByRangeWithPagination(ctx, "", "", 10, "");
+            List<Asset> assets = genson.deserialize(result, new GenericType<List<Asset>>() { });
             assertThat(assets).isNotNull();
             assertThat(assets.size()).isEqualTo(1);
         }
@@ -220,7 +223,8 @@ public class AssetTransferTest {
                     testAsset.getOwner());
             when(stub.getQueryResult(queryString)).thenReturn(new MockAssetResultsIterator());
 
-            List<Asset> assets = contract.queryAssetsByOwner(ctx, testAsset.getOwner());
+            String result = contract.queryAssetsByOwner(ctx, testAsset.getOwner());
+            List<Asset> assets = genson.deserialize(result, new GenericType<List<Asset>>() { });
             assertThat(assets).isNotNull();
             assertThat(assets.size()).isEqualTo(1);
         }
@@ -236,9 +240,11 @@ public class AssetTransferTest {
                     testAsset.getOwner());
             when(stub.getQueryResult(queryString)).thenReturn(new MockAssetResultsIterator());
 
-            List<Asset> assets = contract.queryAssets(ctx, queryString);
+            String result = contract.queryAssets(ctx, queryString);
+            List<Asset> assets = genson.deserialize(result, new GenericType<List<Asset>>() { });
             assertThat(assets).isNotNull();
             assertThat(assets.size()).isEqualTo(1);
+            assertThat(assets.get(0)).isEqualTo(testAsset);
         }
 
         @Test
@@ -255,7 +261,8 @@ public class AssetTransferTest {
             when(stub.getQueryResultWithPagination(queryString, pageSize, bookmark))
                     .thenReturn(new MockAssetResultsIteratorWithMetadata());
 
-            PaginatedQueryResult result = contract.queryAssetsWithPagination(ctx, queryString, pageSize, bookmark);
+            String data = contract.queryAssetsWithPagination(ctx, queryString, pageSize, bookmark);
+            PaginatedQueryResult result = genson.deserialize(data, PaginatedQueryResult.class);
             assertThat(result).isNotNull();
             assertThat(result.getFetchedRecordsCount()).isEqualTo(1);
             assertThat(result.getBookmark()).isEqualTo(bookmark);
@@ -272,7 +279,10 @@ public class AssetTransferTest {
             when(stub.getHistoryForKey(testAsset.getAssetID()))
                     .thenReturn(new MockAssetHistoryResultsIterator());
 
-            List<HistoryQueryResult> results = contract.getAssetHistory(ctx, testAsset.getAssetID());
+            String data = contract.getAssetHistory(ctx, testAsset.getAssetID());
+            List<HistoryQueryResult> results = genson.deserialize(data,
+                    new GenericType<List<HistoryQueryResult>>() { });
+
             assertThat(results).isNotNull();
             assertThat(results.size() > 0).isTrue();
         }
@@ -281,6 +291,7 @@ public class AssetTransferTest {
 
     private final String testOrg1MSP = "Org1MSP";
     private final String indexKey = "color~name";
+    private final Genson genson = new Genson();
 
     private Asset getTestAsset() {
         return new Asset("asset1", "asset", "red", 16, testOrg1MSP, 200);

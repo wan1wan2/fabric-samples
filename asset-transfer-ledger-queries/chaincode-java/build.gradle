@@ -13,7 +13,7 @@ repositories {
 
 dependencies {
     compileOnly 'org.hyperledger.fabric-chaincode-java:fabric-chaincode-shim:2.+'
-
+    implementation 'com.owlike:genson:1.5'
     testImplementation 'org.hyperledger.fabric-chaincode-java:fabric-chaincode-shim:2.+'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.4.2'
     testImplementation 'org.assertj:assertj-core:3.11.1'
@@ -77,6 +77,10 @@ task copyCouchDBIndexFiles(type: Copy) {
         include "META-INF/**"
     }
     into "$buildDir/install/ledger"
+}
+
+installDist {
+    finalizedBy copyCouchDBIndexFiles
 }
 
 check.dependsOn jacocoTestCoverageVerification

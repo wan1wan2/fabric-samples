@@ -12,7 +12,7 @@ import java.util.Objects;
 public final class Asset {
 
     @Property()
-    private final String assetID;
+    private String assetID;
 
     @Property()
     private String docType;
@@ -33,28 +33,48 @@ public final class Asset {
         return assetID;
     }
 
+    public void setAssetID(final String value) {
+        this.assetID = value;
+    }
+
     public String getDocType() {
         return docType;
+    }
+
+    public void setDocType(final String value) {
+        this.docType = value;
     }
 
     public String getColor() {
         return color;
     }
 
+    public void setColor(final String value) {
+        this.color = value;
+    }
+
     public int getSize() {
         return size;
     }
 
-    public void setOwner(final String value) {
-        this.owner = value;
+    public void setSize(final int value) {
+        this.size = value;
     }
 
     public String getOwner() {
         return owner;
     }
 
+    public void setOwner(final String value) {
+        this.owner = value;
+    }
+
     public int getAppraisedValue() {
         return appraisedValue;
+    }
+
+    public void setAppraisedValue(final int value) {
+        this.appraisedValue = value;
     }
 
     public Asset(final String assetID, final  String docType, final  String color,
@@ -69,6 +89,10 @@ public final class Asset {
 
     public Asset(final String assetID) {
         this.assetID = assetID;
+    }
+
+    public Asset() {
+
     }
 
     @Override
